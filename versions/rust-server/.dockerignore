@@ -1,0 +1,12 @@
+target
+cache
+.git
+.gitignore
+README.md
+ai_agent_prompt_manga_mirror_architecture.md
+.env
+.env.*
+*.log
+*.tmp
+.vscode
+.idea
