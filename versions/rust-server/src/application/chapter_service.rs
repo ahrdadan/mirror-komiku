@@ -34,8 +34,7 @@ pub async fn spawn_regeneration_if_needed(
     }
 
     tokio::spawn(async move {
-        if let Err(err) =
-            generate_chapter(source_url, &chapter_hash, &state, allow_prefetch).await
+        if let Err(err) = generate_chapter(source_url, &chapter_hash, &state, allow_prefetch).await
         {
             warn!("background regeneration failed: {err:#}");
         }
