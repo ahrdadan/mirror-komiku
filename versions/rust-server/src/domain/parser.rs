@@ -37,7 +37,11 @@ fn select_title(doc: &ScraperHtml) -> Option<String> {
 }
 
 fn select_image_urls(doc: &ScraperHtml, source_url: &Url) -> Result<Vec<Url>> {
-    let selectors = ["#Baca_Komik img[src]", "div#Baca_Komik img[src]", "img[src]"];
+    let selectors = [
+        "#Baca_Komik img[src]",
+        "div#Baca_Komik img[src]",
+        "img[src]",
+    ];
     let mut out = Vec::new();
     let mut seen = HashSet::new();
 

@@ -94,8 +94,13 @@ async fn handle_target_request(raw_target: String, state: AppState) -> HttpRespo
             }
         }
 
-        spawn_regeneration_if_needed(source_url.clone(), chapter_hash.clone(), state.clone(), true)
-            .await;
+        spawn_regeneration_if_needed(
+            source_url.clone(),
+            chapter_hash.clone(),
+            state.clone(),
+            true,
+        )
+        .await;
         return serve_html_file(&html_path, "STALE").await;
     }
 
@@ -107,7 +112,9 @@ async fn handle_target_request(raw_target: String, state: AppState) -> HttpRespo
         let bg_hash = chapter_hash.clone();
         let bg_source_url = source_url.clone();
         tokio::spawn(async move {
-            if let Err(err) = generate_chapter_live_pipeline(bg_source_url, bg_hash.clone(), &bg_state).await {
+            if let Err(err) =
+                generate_chapter_live_pipeline(bg_source_url, bg_hash.clone(), &bg_state).await
+            {
                 on_live_pipeline_error(&bg_state, &bg_hash, err).await;
                 return;
             }
@@ -146,11 +153,7 @@ async fn handle_raw_target_request(
     };
 
     let canonical_path = raw_path_for_url(&source_url);
-    let incoming_target = req
-        .uri()
-        .path()
-        .strip_prefix("/raw/")
-        .unwrap_or_default();
+    let incoming_target = req.uri().path().strip_prefix("/raw/").unwrap_or_default();
     let should_redirect = incoming_target.starts_with("http://")
         || incoming_target.starts_with("https://")
         || incoming_target.starts_with("http:/")
@@ -169,7 +172,9 @@ async fn handle_raw_target_request(
         let bg_state = state.clone();
         let bg_hash = chapter_hash.clone();
         tokio::spawn(async move {
-            if let Err(err) = generate_raw_chapter_live_pipeline(source_url, bg_hash.clone(), &bg_state).await {
+            if let Err(err) =
+                generate_raw_chapter_live_pipeline(source_url, bg_hash.clone(), &bg_state).await
+            {
                 on_live_pipeline_error(&bg_state, &bg_hash, err).await;
                 return;
             }
@@ -185,10 +190,11 @@ async fn handle_raw_target_request(
 }
 
 async fn handle_raw_image(path: web::Path<String>, state: web::Data<AppState>) -> HttpResponse {
-    let image_url = match decode_and_validate_target(&path.into_inner(), &state.allowed_domains).await {
-        Ok(url) => url,
-        Err(err) => return bad_request(err),
-    };
+    let image_url =
+        match decode_and_validate_target(&path.into_inner(), &state.allowed_domains).await {
+            Ok(url) => url,
+            Err(err) => return bad_request(err),
+        };
 
     let upstream = match state.client.get(image_url).send().await {
         Ok(resp) => resp,
@@ -236,7 +242,10 @@ async fn serve_html_file(path: &Path, cache_status: &str) -> HttpResponse {
     }
 }
 
-async fn serve_asset(path: web::Path<(String, String)>, state: web::Data<AppState>) -> HttpResponse {
+async fn serve_asset(
+    path: web::Path<(String, String)>,
+    state: web::Data<AppState>,
+) -> HttpResponse {
     let (chapter_hash, file_name) = path.into_inner();
     if !file_name.ends_with(".avif")
         || file_name.contains('/')

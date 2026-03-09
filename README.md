@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/ahrdadan/mirror-komiku/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/ahrdadan/mirror-komiku/actions/workflows/ci.yml)
 [![Rust Release](https://github.com/ahrdadan/mirror-komiku/actions/workflows/rust-release.yml/badge.svg?branch=main)](https://github.com/ahrdadan/mirror-komiku/actions/workflows/rust-release.yml)
+[![Rust Docker Smoke Test](https://github.com/ahrdadan/mirror-komiku/actions/workflows/rust-docker-test.yml/badge.svg?branch=main)](https://github.com/ahrdadan/mirror-komiku/actions/workflows/rust-docker-test.yml)
 
 GitHub repository: <https://github.com/ahrdadan/mirror-komiku>
 
@@ -23,7 +24,7 @@ Live static deployment: <https://mirror-komiku.edgeone.dev/>
 
 ## GitHub CI/CD
 
-This repository includes two GitHub Actions workflows:
+This repository includes three GitHub Actions workflows:
 
 - `CI` (`.github/workflows/ci.yml`)
   Runs checks for:
@@ -31,6 +32,8 @@ This repository includes two GitHub Actions workflows:
   - `versions/static` (required file checks + JavaScript syntax checks)
 - `Rust Release` (`.github/workflows/rust-release.yml`)
   Builds Rust binary release and publishes GitHub Release with version from `versions/rust-server/Cargo.toml`.
+- `Rust Docker Smoke Test` (`.github/workflows/rust-docker-test.yml`)
+  Builds Docker image from `versions/rust-server/Dockerfile`, runs container, then checks running state, HTTP port, and container health.
 
 ## Usage and Responsibility Notice
 

@@ -9,9 +9,6 @@ FROM debian:bookworm-slim AS runtime
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl \
-    && curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
-      -o /usr/local/bin/cloudflared \
-    && chmod +x /usr/local/bin/cloudflared \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -29,10 +26,12 @@ ENV PREFETCH_DEPTH=3
 ENV CLEANUP_INTERVAL_SECONDS=300
 ENV ALLOWED_DOMAINS=komiku.org,img.komiku.org
 ENV RUST_LOG=info
-ENV CF_TOKEN=eyJhIjoiYzIyMGE0YzAzZjZiOWFhNGUzYTYwZWU0MTIxZWMwNGMiLCJ0IjoiMWM4NGNlZjUtMWUyMi00ZTMyLThkMzgtODU5NDc4MGUwNjI0IiwicyI6IlpqUmhZVFJqTVRndE9EUXhOaTAwWmpneUxUZzBNV1V0T0dWaFlqY3hNRFF4WW1FNSJ9
 
 EXPOSE 7860
 RUN mkdir -p /data/cache
 VOLUME ["/data/cache"]
 
-CMD ["sh", "-lc", "if [ -z \"$CF_TOKEN\" ]; then echo \"CF_TOKEN is empty. Set CF_TOKEN for cloudflared tunnel.\"; exit 1; fi; echo \"starting mirror-komiku mode=$RUN_MODE bind=$BIND_ADDR port=$PORT cache=$CACHE_DIR\"; /usr/local/bin/mirror-komiku & APP_PID=$!; echo \"starting cloudflared tunnel to http://127.0.0.1:$PORT\"; cloudflared tunnel --no-autoupdate run --token \"$CF_TOKEN\"; EXIT_CODE=$?; echo \"cloudflared exited code=$EXIT_CODE\"; kill $APP_PID 2>/dev/null || true; wait $APP_PID 2>/dev/null || true; exit $EXIT_CODE"]
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=6 \
+  CMD sh -ec 'curl -fsS "http://127.0.0.1:${PORT}/" > /dev/null'
+
+CMD ["sh", "-lc", "echo \"starting mirror-komiku mode=$RUN_MODE bind=$BIND_ADDR port=$PORT cache=$CACHE_DIR\"; exec /usr/local/bin/mirror-komiku"]

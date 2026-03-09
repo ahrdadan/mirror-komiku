@@ -1,5 +1,6 @@
 use actix_web::{web, Error as ActixError, HttpRequest, HttpResponse};
 use actix_ws::{Message, MessageStream, Session};
+use futures_util::StreamExt;
 use serde_json::Value;
 use tokio::sync::broadcast;
 use url::Url;
@@ -41,7 +42,10 @@ async fn handle_client_text(state: &AppState, chapter_hash: &str, text: &str) {
         Ok(v) => v,
         Err(_) => return,
     };
-    let msg_type = parsed.get("type").and_then(Value::as_str).unwrap_or_default();
+    let msg_type = parsed
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
     if msg_type != "raw_prefetch_request" {
         return;
     }
@@ -101,7 +105,7 @@ async fn ws_loop(
 
     loop {
         tokio::select! {
-            incoming = msg_stream.recv() => {
+            incoming = msg_stream.next() => {
                 match incoming {
                     Some(Ok(Message::Ping(bytes))) => {
                         if session.pong(&bytes).await.is_err() {

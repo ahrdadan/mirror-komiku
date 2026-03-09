@@ -15,8 +15,9 @@ pub async fn decode_and_validate_target(
 
 fn decode_target(raw_target: &str) -> String {
     let trimmed = raw_target.trim();
-    let maybe_decoded =
-        percent_encoding::percent_decode_str(trimmed).decode_utf8_lossy().to_string();
+    let maybe_decoded = percent_encoding::percent_decode_str(trimmed)
+        .decode_utf8_lossy()
+        .to_string();
     fix_slash_after_scheme(&maybe_decoded)
 }
 

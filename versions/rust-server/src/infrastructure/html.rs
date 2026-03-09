@@ -36,13 +36,15 @@ pub fn build_reader_html(
   <title>{escaped_title}</title>
   <style>
     :root {{ color-scheme: dark; }}
+    * {{ box-sizing: border-box; }}
     body {{ margin: 0; background: #0f1115; color: #f8f8f8; font-family: Georgia, serif; }}
-    .wrap {{ max-width: 920px; margin: 0 auto; padding: 18px 14px 36px; }}
-    h1 {{ font-size: 1.25rem; margin: 0 0 14px; }}
-    .meta {{ font-size: 0.9rem; color: #a3a9b6; margin-bottom: 14px; }}
-    .page {{ display: block; width: 100%; margin: 0; background: #151922; min-height: 80px; }}
-    .footer {{ display: flex; justify-content: center; padding-top: 16px; }}
-    .btn {{ display: inline-block; background: #f59e0b; color: #1a1200; text-decoration: none; padding: 10px 14px; border-radius: 6px; font-weight: 700; }}
+    .wrap {{ max-width: none; margin: 0 auto; padding: 0; }}
+    h1 {{ font-size: 1.25rem; margin: 0; padding: 12px 12px 10px; }}
+    .meta {{ font-size: 0.9rem; color: #a3a9b6; margin: 0; padding: 0 12px 12px; }}
+    .pages {{ width: 100vw; margin-left: calc(50% - 50vw); border: 0; border-radius: 0; }}
+    .page {{ display: block; width: 100vw; margin: 0; background: #151922; min-height: 80px; }}
+    .footer {{ width: 100vw; margin: 0 0 0 calc(50% - 50vw); padding: 0; }}
+    .btn {{ display: flex; align-items: center; justify-content: center; width: 100vw; min-height: 72px; background: #f59e0b; color: #1a1200; text-decoration: none; border-radius: 0; font-size: 1.05rem; font-weight: 700; }}
     .disabled {{ background: #4b5563; color: #e5e7eb; }}
   </style>
 </head>
@@ -50,7 +52,7 @@ pub fn build_reader_html(
   <main class=\"wrap\">
     <h1>{escaped_title}</h1>
     <div class=\"meta\">Sequential image loading - AVIF cache</div>
-    {images_markup}
+    <div class=\"pages\">{images_markup}</div>
     <div class=\"footer\">{next_button}</div>
   </main>
   <script>
@@ -210,13 +212,15 @@ pub fn build_live_reader_html(chapter_hash: &str) -> String {
   <title>Loading chapter...</title>
   <style>
     :root {{ color-scheme: dark; }}
+    * {{ box-sizing: border-box; }}
     body {{ margin: 0; background: #0f1115; color: #f8f8f8; font-family: Georgia, serif; }}
-    .wrap {{ max-width: 920px; margin: 0 auto; padding: 14px 0 24px; }}
-    h1 {{ font-size: 1.2rem; margin: 0 14px 10px; }}
-    .meta {{ font-size: 0.85rem; color: #a3a9b6; margin: 0 14px 14px; }}
-    .page {{ display: block; width: 100%; margin: 0; background: #151922; min-height: 80px; }}
-    .footer {{ display: flex; justify-content: center; padding: 16px 14px 0; }}
-    .btn {{ display: inline-block; background: #f59e0b; color: #1a1200; text-decoration: none; padding: 10px 14px; border-radius: 6px; font-weight: 700; }}
+    .wrap {{ max-width: none; margin: 0 auto; padding: 0; }}
+    h1 {{ font-size: 1.2rem; margin: 0; padding: 12px 12px 10px; }}
+    .meta {{ font-size: 0.85rem; color: #a3a9b6; margin: 0; padding: 0 12px 12px; }}
+    #pages {{ width: 100vw; margin-left: calc(50% - 50vw); border: 0; border-radius: 0; }}
+    .page {{ display: block; width: 100vw; margin: 0; background: #151922; min-height: 80px; }}
+    .footer {{ width: 100vw; margin: 0 0 0 calc(50% - 50vw); padding: 0; }}
+    .btn {{ display: flex; align-items: center; justify-content: center; width: 100vw; min-height: 72px; background: #f59e0b; color: #1a1200; text-decoration: none; border-radius: 0; font-size: 1.05rem; font-weight: 700; }}
     .btn.disabled {{ background: #4b5563; color: #e5e7eb; pointer-events: none; }}
   </style>
 </head>
@@ -441,13 +445,15 @@ pub fn build_live_raw_reader_html(chapter_hash: &str) -> String {
   <title>Loading raw chapter...</title>
   <style>
     :root {{ color-scheme: dark; }}
+    * {{ box-sizing: border-box; }}
     body {{ margin: 0; background: #0f1115; color: #f8f8f8; font-family: Georgia, serif; }}
-    .wrap {{ max-width: 920px; margin: 0 auto; padding: 14px 0 24px; }}
-    h1 {{ font-size: 1.2rem; margin: 0 14px 10px; }}
-    .meta {{ font-size: 0.85rem; color: #a3a9b6; margin: 0 14px 14px; }}
-    .page {{ display: block; width: 100%; margin: 0; background: #151922; min-height: 80px; }}
-    .footer {{ display: flex; justify-content: center; padding: 16px 14px 0; }}
-    .btn {{ display: inline-block; background: #22c55e; color: #062712; text-decoration: none; padding: 10px 14px; border-radius: 6px; font-weight: 700; }}
+    .wrap {{ max-width: none; margin: 0 auto; padding: 0; }}
+    h1 {{ font-size: 1.2rem; margin: 0; padding: 12px 12px 10px; }}
+    .meta {{ font-size: 0.85rem; color: #a3a9b6; margin: 0; padding: 0 12px 12px; }}
+    #pages {{ width: 100vw; margin-left: calc(50% - 50vw); border: 0; border-radius: 0; }}
+    .page {{ display: block; width: 100vw; margin: 0; background: #151922; min-height: 80px; }}
+    .footer {{ width: 100vw; margin: 0 0 0 calc(50% - 50vw); padding: 0; }}
+    .btn {{ display: flex; align-items: center; justify-content: center; width: 100vw; min-height: 72px; background: #22c55e; color: #062712; text-decoration: none; border-radius: 0; font-size: 1.05rem; font-weight: 700; }}
     .btn.disabled {{ background: #4b5563; color: #e5e7eb; pointer-events: none; }}
   </style>
 </head>

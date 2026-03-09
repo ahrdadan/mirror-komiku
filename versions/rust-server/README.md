@@ -2,6 +2,8 @@
 
 Server-side implementation of `mirror-komiku` using Rust + Actix Web.
 
+[![Rust Docker Smoke Test](https://github.com/ahrdadan/mirror-komiku/actions/workflows/rust-docker-test.yml/badge.svg?branch=main)](https://github.com/ahrdadan/mirror-komiku/actions/workflows/rust-docker-test.yml)
+
 ## Repository
 
 - GitHub: <https://github.com/ahrdadan/mirror-komiku>
@@ -125,3 +127,13 @@ This version is validated by the root GitHub Actions workflow:
   - `cargo fmt --all -- --check`
   - `cargo check --all-targets --all-features`
   - `cargo test --all-targets --all-features -- --nocapture`
+
+Dockerfile smoke testing:
+
+- Workflow: `.github/workflows/rust-docker-test.yml`
+- Checks:
+  - `docker build` from `versions/rust-server/Dockerfile`
+  - container run
+  - running/exit-code
+  - port `7860`
+  - Docker `HEALTHCHECK`

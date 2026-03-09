@@ -31,7 +31,10 @@ pub async fn ws_boot_events(state: &AppState, chapter_hash: &str) -> Vec<WsEvent
 }
 
 pub async fn ws_emit(state: &AppState, chapter_hash: &str, event: WsEvent) {
-    if matches!(&event, WsEvent::ChapterInit { .. } | WsEvent::RawChapterInit { .. }) {
+    if matches!(
+        &event,
+        WsEvent::ChapterInit { .. } | WsEvent::RawChapterInit { .. }
+    ) {
         let mut map = state.ws_init_events.lock().await;
         map.insert(chapter_hash.to_string(), event.clone());
         drop(map);

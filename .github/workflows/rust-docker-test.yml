@@ -1,0 +1,118 @@
+name: Rust Docker Smoke Test
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "versions/rust-server/**"
+      - ".github/workflows/rust-docker-test.yml"
+  pull_request:
+    paths:
+      - "versions/rust-server/**"
+      - ".github/workflows/rust-docker-test.yml"
+  workflow_dispatch:
+
+jobs:
+  docker-smoke:
+    name: Build and Run Docker Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -f versions/rust-server/Dockerfile \
+            -t mirror-komiku-rust:test \
+            versions/rust-server
+
+      - name: Run container
+        run: |
+          docker run -d \
+            --name mirror-komiku-rust-test \
+            -e RUN_MODE=web \
+            -p 7860:7860 \
+            mirror-komiku-rust:test
+
+      - name: Check container is running
+        shell: bash
+        run: |
+          for i in {1..20}; do
+            RUNNING="$(docker inspect -f '{{.State.Running}}' mirror-komiku-rust-test)"
+            EXIT_CODE="$(docker inspect -f '{{.State.ExitCode}}' mirror-komiku-rust-test)"
+            if [ "$RUNNING" = "true" ]; then
+              echo "Container is running."
+              exit 0
+            fi
+            if [ "$EXIT_CODE" != "0" ]; then
+              echo "::error::Container stopped early with exit code $EXIT_CODE."
+              docker logs mirror-komiku-rust-test || true
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "::error::Container is not running."
+          docker logs mirror-komiku-rust-test || true
+          exit 1
+
+      - name: Check HTTP port response
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            if curl -sS "http://127.0.0.1:7860/" -o /dev/null; then
+              echo "Port 7860 is reachable."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Port 7860 is not reachable."
+          docker logs mirror-komiku-rust-test || true
+          exit 1
+
+      - name: Check health status
+        shell: bash
+        run: |
+          for i in {1..40}; do
+            STATUS="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' mirror-komiku-rust-test)"
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Container health is healthy."
+              exit 0
+            fi
+            if [ "$STATUS" = "unhealthy" ]; then
+              echo "::error::Container health is unhealthy."
+              docker logs mirror-komiku-rust-test || true
+              exit 1
+            fi
+            if [ "$STATUS" = "none" ]; then
+              echo "::error::Container has no health status. Ensure Dockerfile defines HEALTHCHECK."
+              docker logs mirror-komiku-rust-test || true
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "::error::Container health check timed out."
+          docker logs mirror-komiku-rust-test || true
+          exit 1
+
+      - name: Check exit code while running
+        shell: bash
+        run: |
+          RUNNING="$(docker inspect -f '{{.State.Running}}' mirror-komiku-rust-test)"
+          EXIT_CODE="$(docker inspect -f '{{.State.ExitCode}}' mirror-komiku-rust-test)"
+          echo "running=$RUNNING exit_code=$EXIT_CODE"
+          if [ "$RUNNING" != "true" ]; then
+            echo "::error::Container stopped unexpectedly with exit code $EXIT_CODE."
+            docker logs mirror-komiku-rust-test || true
+            exit 1
+          fi
+
+      - name: Show logs
+        if: always()
+        run: docker logs mirror-komiku-rust-test || true
+
+      - name: Cleanup container
+        if: always()
+        run: docker rm -f mirror-komiku-rust-test || true

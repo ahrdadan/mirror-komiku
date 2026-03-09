@@ -34,7 +34,9 @@ pub async fn spawn_regeneration_if_needed(
     }
 
     tokio::spawn(async move {
-        if let Err(err) = generate_chapter(source_url, &chapter_hash, &state, allow_prefetch).await {
+        if let Err(err) =
+            generate_chapter(source_url, &chapter_hash, &state, allow_prefetch).await
+        {
             warn!("background regeneration failed: {err:#}");
         }
         end_generation(&state, &chapter_hash).await;
@@ -108,9 +110,14 @@ pub async fn generate_chapter_live_pipeline(
         .map(|(idx, url)| (idx + 1, url.clone()))
         .collect::<Vec<_>>();
     let convert_tail_started = Instant::now();
-    let mut assets_total_bytes =
-        process_selected_images_parallel(&tail_jobs, assets_dir.clone(), chapter_hash.clone(), state, true)
-            .await?;
+    let mut assets_total_bytes = process_selected_images_parallel(
+        &tail_jobs,
+        assets_dir.clone(),
+        chapter_hash.clone(),
+        state,
+        true,
+    )
+    .await?;
     info!(
         "chapter={} phase=convert_tail count={} ms={}",
         chapter_hash,
@@ -127,8 +134,14 @@ pub async fn generate_chapter_live_pipeline(
         .collect::<Vec<_>>();
     let convert_head_started = Instant::now();
     assets_total_bytes = assets_total_bytes.saturating_add(
-        process_selected_images_parallel(&head_jobs, assets_dir.clone(), chapter_hash.clone(), state, false)
-            .await?,
+        process_selected_images_parallel(
+            &head_jobs,
+            assets_dir.clone(),
+            chapter_hash.clone(),
+            state,
+            false,
+        )
+        .await?,
     );
     info!(
         "chapter={} phase=convert_head count={} ms={}",
@@ -138,7 +151,12 @@ pub async fn generate_chapter_live_pipeline(
     );
 
     let next_link = parsed.next_url.as_ref().map(mirror_path_for_url);
-    let html = build_reader_html(&parsed.title, &chapter_hash, parsed.image_urls.len(), next_link);
+    let html = build_reader_html(
+        &parsed.title,
+        &chapter_hash,
+        parsed.image_urls.len(),
+        next_link,
+    );
     let html_path = pages_dir.join("index.html");
     write_atomic(&html_path, html.as_bytes()).await?;
     let html_bytes = html.len() as u64;
@@ -297,9 +315,14 @@ async fn generate_chapter_without_prefetch(
         .map(|(idx, url)| (idx + 1, url.clone()))
         .collect::<Vec<_>>();
     let convert_started = Instant::now();
-    let assets_total_bytes =
-        process_selected_images_parallel(&jobs, assets_dir.clone(), chapter_hash.to_string(), state, false)
-            .await?;
+    let assets_total_bytes = process_selected_images_parallel(
+        &jobs,
+        assets_dir.clone(),
+        chapter_hash.to_string(),
+        state,
+        false,
+    )
+    .await?;
     info!(
         "chapter={} phase=convert_all images={} ms={}",
         chapter_hash,
@@ -308,7 +331,12 @@ async fn generate_chapter_without_prefetch(
     );
 
     let next_link = parsed.next_url.as_ref().map(mirror_path_for_url);
-    let html = build_reader_html(&parsed.title, chapter_hash, parsed.image_urls.len(), next_link);
+    let html = build_reader_html(
+        &parsed.title,
+        chapter_hash,
+        parsed.image_urls.len(),
+        next_link,
+    );
     let html_path = pages_dir.join("index.html");
     write_atomic(&html_path, html.as_bytes()).await?;
     let html_bytes = html.len() as u64;
@@ -448,7 +476,10 @@ async fn prefetch_raw_chapter_once(
         state,
         ws_chapter_hash,
         WsEvent::RawPrefetchedChapter {
-            chapter_hash: format!("raw-{}", crate::infrastructure::storage::hash_url(url.as_str())),
+            chapter_hash: format!(
+                "raw-{}",
+                crate::infrastructure::storage::hash_url(url.as_str())
+            ),
             source_url: url.to_string(),
             title: parsed.title.clone(),
             image_urls,

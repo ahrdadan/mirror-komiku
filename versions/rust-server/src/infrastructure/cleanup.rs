@@ -83,7 +83,8 @@ pub async fn run_cleanup_once(
     report.disk_limit_bytes = dynamic_disk_limit_bytes(&cfg.cache_root).await;
     step_enforce_disk_limit(&mut entries, report.disk_limit_bytes, &mut report).await;
 
-    let (orphan_removed, temp_removed) = cleanup_orphan_and_temp(cfg, in_progress, &entries).await?;
+    let (orphan_removed, temp_removed) =
+        cleanup_orphan_and_temp(cfg, in_progress, &entries).await?;
     report.orphan_removed = orphan_removed;
     report.temp_removed = temp_removed;
 
@@ -349,11 +350,17 @@ async fn cleanup_temp_files(cache_root: &Path) -> Result<usize> {
 
 async fn delete_cache_entry(entry: &CacheEntry, _reason: &str) -> bool {
     if let Err(err) = remove_dir_if_exists(&entry.page_dir).await {
-        error!("cleanup: failed delete page_dir {:?}: {err}", entry.page_dir);
+        error!(
+            "cleanup: failed delete page_dir {:?}: {err}",
+            entry.page_dir
+        );
         return false;
     }
     if let Err(err) = remove_dir_if_exists(&entry.assets_dir).await {
-        error!("cleanup: failed delete assets_dir {:?}: {err}", entry.assets_dir);
+        error!(
+            "cleanup: failed delete assets_dir {:?}: {err}",
+            entry.assets_dir
+        );
         return false;
     }
     true
