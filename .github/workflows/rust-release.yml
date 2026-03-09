@@ -21,24 +21,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure Cargo manifest exists
+      - name: Detect Cargo manifest
+        id: rust_manifest
         shell: bash
         run: |
-          if [ ! -f "versions/rust-server/Cargo.toml" ]; then
-            echo "::error::versions/rust-server/Cargo.toml is missing in this checkout."
-            exit 1
+          if [ -f "versions/rust-server/Cargo.toml" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Setup Rust
+        if: ${{ steps.rust_manifest.outputs.found == 'true' }}
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Rust build
+        if: ${{ steps.rust_manifest.outputs.found == 'true' }}
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: versions/rust-server -> target
 
       - name: Read version from Cargo.toml
         id: version
+        if: ${{ steps.rust_manifest.outputs.found == 'true' }}
         shell: bash
         run: |
           VERSION="$(awk -F'\"' '/^version[[:space:]]*=/ {print $2; exit}' versions/rust-server/Cargo.toml)"
@@ -52,6 +57,7 @@ jobs:
 
       - name: Check release tag already exists
         id: release_exists
+        if: ${{ steps.rust_manifest.outputs.found == 'true' }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -72,13 +78,13 @@ jobs:
             }
 
       - name: Build release binary
-        if: ${{ steps.release_exists.outputs.exists != 'true' }}
+        if: ${{ steps.rust_manifest.outputs.found == 'true' && steps.release_exists.outputs.exists != 'true' }}
         shell: bash
         run: cargo build --release --manifest-path versions/rust-server/Cargo.toml
 
       - name: Package artifact
         id: package
-        if: ${{ steps.release_exists.outputs.exists != 'true' }}
+        if: ${{ steps.rust_manifest.outputs.found == 'true' && steps.release_exists.outputs.exists != 'true' }}
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
@@ -97,7 +103,7 @@ jobs:
           echo "checksum=$OUT_DIR/$ARCHIVE_NAME.sha256" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
-        if: ${{ steps.release_exists.outputs.exists != 'true' }}
+        if: ${{ steps.rust_manifest.outputs.found == 'true' && steps.release_exists.outputs.exists != 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
@@ -111,7 +117,14 @@ jobs:
             ${{ steps.package.outputs.checksum }}
 
       - name: Release already exists
-        if: ${{ steps.release_exists.outputs.exists == 'true' }}
+        if: ${{ steps.rust_manifest.outputs.found == 'true' && steps.release_exists.outputs.exists == 'true' }}
         shell: bash
         run: |
           echo "Release for ${{ steps.version.outputs.tag }} already exists. Skipping build and upload."
+
+      - name: Release skipped (Cargo.toml missing)
+        if: ${{ steps.rust_manifest.outputs.found != 'true' }}
+        shell: bash
+        run: |
+          echo "::warning::Skipping Rust release because versions/rust-server/Cargo.toml is missing in this checkout."
+          echo "::warning::Root cause: versions/rust-server is currently committed as a gitlink without .gitmodules."
