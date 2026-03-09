@@ -1,6 +1,7 @@
 # mirror-komiku
 
-[![CI](https://github.com/ahrdadan/mirror-komiku/actions/workflows/ci.yml/badge.svg)](https://github.com/ahrdadan/mirror-komiku/actions/workflows/ci.yml)
+[![CI](https://github.com/ahrdadan/mirror-komiku/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/ahrdadan/mirror-komiku/actions/workflows/ci.yml)
+[![Rust Release](https://github.com/ahrdadan/mirror-komiku/actions/workflows/rust-release.yml/badge.svg?branch=main)](https://github.com/ahrdadan/mirror-komiku/actions/workflows/rust-release.yml)
 
 GitHub repository: <https://github.com/ahrdadan/mirror-komiku>
 
@@ -22,12 +23,14 @@ Live static deployment: <https://mirror-komiku.edgeone.dev/>
 
 ## GitHub CI/CD
 
-This repository includes one GitHub Actions workflow:
+This repository includes two GitHub Actions workflows:
 
 - `CI` (`.github/workflows/ci.yml`)
   Runs checks for:
   - `versions/rust-server` (`cargo fmt`, `cargo check`, `cargo test`)
   - `versions/static` (required file checks + JavaScript syntax checks)
+- `Rust Release` (`.github/workflows/rust-release.yml`)
+  Builds Rust binary release and publishes GitHub Release with version from `versions/rust-server/Cargo.toml`.
 
 ## Usage and Responsibility Notice
 

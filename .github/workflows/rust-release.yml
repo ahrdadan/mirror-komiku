@@ -1,0 +1,86 @@
+name: Rust Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Publish Rust Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure Cargo manifest exists
+        shell: bash
+        run: |
+          if [ ! -f "versions/rust-server/Cargo.toml" ]; then
+            echo "::error::versions/rust-server/Cargo.toml is missing in this checkout."
+            exit 1
+          fi
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: versions/rust-server -> target
+
+      - name: Read version from Cargo.toml
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(awk -F'\"' '/^version[[:space:]]*=/ {print $2; exit}' versions/rust-server/Cargo.toml)"
+          if [ -z "$VERSION" ]; then
+            echo "::error::Failed to read version from versions/rust-server/Cargo.toml"
+            exit 1
+          fi
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Validate pushed tag matches Cargo.toml version
+        if: ${{ github.event_name == 'push' }}
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_NAME}" != "${{ steps.version.outputs.tag }}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match Cargo.toml version tag ${{ steps.version.outputs.tag }}."
+            exit 1
+          fi
+
+      - name: Build release binary
+        shell: bash
+        run: cargo build --release --manifest-path versions/rust-server/Cargo.toml
+
+      - name: Package artifact
+        id: package
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          OUT_DIR="dist"
+          BIN_NAME="mirror-komiku-linux-x86_64"
+          ARCHIVE_NAME="mirror-komiku-v${VERSION}-linux-x86_64.tar.gz"
+          mkdir -p "$OUT_DIR"
+          cp "versions/rust-server/target/release/mirror-komiku" "$OUT_DIR/$BIN_NAME"
+          chmod +x "$OUT_DIR/$BIN_NAME"
+          tar -czf "$OUT_DIR/$ARCHIVE_NAME" -C "$OUT_DIR" "$BIN_NAME"
+          sha256sum "$OUT_DIR/$ARCHIVE_NAME" > "$OUT_DIR/$ARCHIVE_NAME.sha256"
+          echo "archive=$OUT_DIR/$ARCHIVE_NAME" >> "$GITHUB_OUTPUT"
+          echo "checksum=$OUT_DIR/$ARCHIVE_NAME.sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: mirror-komiku ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            ${{ steps.package.outputs.archive }}
+            ${{ steps.package.outputs.checksum }}

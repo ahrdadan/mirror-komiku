@@ -31,6 +31,10 @@
     - required file validation
     - JS syntax check for `versions/static/app.js`
     - JS syntax check for `versions/static/edge-functions/api/proxy.js`
+- Workflow: `.github/workflows/rust-release.yml`
+  - Reads app version from `versions/rust-server/Cargo.toml`
+  - Builds Rust binary in release mode
+  - Publishes GitHub Release with tag format `v<version>`
 
 ## Notes
 
