@@ -65,14 +65,17 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           OUT_DIR="dist"
-          BIN_NAME="mirror-komiku-linux-x86_64"
+          BIN_NAME="mirror-komiku-v${VERSION}-linux-x86_64"
           ARCHIVE_NAME="mirror-komiku-v${VERSION}-linux-x86_64.tar.gz"
           mkdir -p "$OUT_DIR"
           cp "versions/rust-server/target/release/mirror-komiku" "$OUT_DIR/$BIN_NAME"
           chmod +x "$OUT_DIR/$BIN_NAME"
           tar -czf "$OUT_DIR/$ARCHIVE_NAME" -C "$OUT_DIR" "$BIN_NAME"
           sha256sum "$OUT_DIR/$ARCHIVE_NAME" > "$OUT_DIR/$ARCHIVE_NAME.sha256"
+          sha256sum "$OUT_DIR/$BIN_NAME" > "$OUT_DIR/$BIN_NAME.sha256"
+          echo "binary=$OUT_DIR/$BIN_NAME" >> "$GITHUB_OUTPUT"
           echo "archive=$OUT_DIR/$ARCHIVE_NAME" >> "$GITHUB_OUTPUT"
+          echo "binary_checksum=$OUT_DIR/$BIN_NAME.sha256" >> "$GITHUB_OUTPUT"
           echo "checksum=$OUT_DIR/$ARCHIVE_NAME.sha256" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
@@ -82,5 +85,7 @@ jobs:
           name: mirror-komiku ${{ steps.version.outputs.tag }}
           generate_release_notes: true
           files: |
+            ${{ steps.package.outputs.binary }}
+            ${{ steps.package.outputs.binary_checksum }}
             ${{ steps.package.outputs.archive }}
             ${{ steps.package.outputs.checksum }}
