@@ -103,8 +103,3 @@ This version is validated by the root GitHub Actions workflow:
   - JavaScript syntax check for:
     - `versions/static/app.js`
     - `versions/static/edge-functions/api/proxy.js`
-
-Repository sidebar metadata (description/topics) is managed by:
-
-- `.github/repository-metadata.json`
-- `.github/workflows/repository-metadata.yml`

@@ -1,7 +1,6 @@
 # mirror-komiku
 
 [![CI](https://github.com/ahrdadan/mirror-komiku/actions/workflows/ci.yml/badge.svg)](https://github.com/ahrdadan/mirror-komiku/actions/workflows/ci.yml)
-[![Repository Metadata](https://github.com/ahrdadan/mirror-komiku/actions/workflows/repository-metadata.yml/badge.svg)](https://github.com/ahrdadan/mirror-komiku/actions/workflows/repository-metadata.yml)
 
 GitHub repository: <https://github.com/ahrdadan/mirror-komiku>
 
@@ -23,33 +22,24 @@ Live static deployment: <https://mirror-komiku.edgeone.dev/>
 
 ## GitHub CI/CD
 
-This repository includes two GitHub Actions workflows:
+This repository includes one GitHub Actions workflow:
 
 - `CI` (`.github/workflows/ci.yml`)
   Runs checks for:
   - `versions/rust-server` (`cargo fmt`, `cargo check`, `cargo test`)
   - `versions/static` (required file checks + JavaScript syntax checks)
-- `Repository Metadata` (`.github/workflows/repository-metadata.yml`)
-  Syncs repository sidebar metadata from `.github/repository-metadata.json`:
-  - Description
-  - Homepage URL
-  - Topics (tags)
 
-## Sidebar Metadata Setup
+## Usage and Responsibility Notice
 
-For reliable metadata updates, create this repository secret:
+- This repository is provided for personal use only.
+- The maintainer does not accept responsibility or liability for any direct or indirect impact from usage.
+- You are fully responsible for your own usage, including legal and platform compliance.
 
-- `REPO_ADMIN_TOKEN`
-  A GitHub Personal Access Token (PAT) with repository administration permission (`repo` scope for classic PAT, or `Administration: Read and write` for fine-grained PAT on this repo).
+## License
 
-The metadata source file is:
+This project uses a custom restricted license:
 
-- `.github/repository-metadata.json`
-
-You can trigger metadata sync by:
-
-- pushing changes to `.github/repository-metadata.json`, or
-- running the `Repository Metadata` workflow manually from Actions.
+- [LICENSE](LICENSE) - Personal Use Only License (PUOL-1.0)
 
 ## Notes
 
