@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "versions/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "versions/**"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+
+jobs:
+  rust-server:
+    name: Rust Server Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: versions/rust-server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: versions/rust-server -> target
+
+      - name: Format check
+        run: cargo fmt --all -- --check
+
+      - name: Cargo check
+        run: cargo check --all-targets --all-features
+
+      - name: Cargo test
+        run: cargo test --all-targets --all-features -- --nocapture
+
+  static:
+    name: Static Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate static files exist
+        run: |
+          test -f versions/static/index.html
+          test -f versions/static/styles.css
+          test -f versions/static/app.js
+          test -f versions/static/edge-functions/api/proxy.js
+          test -f versions/static/README.md
+
+      - name: JS syntax check (frontend)
+        run: node --check versions/static/app.js
+
+      - name: JS syntax check (edge function)
+        run: node --check versions/static/edge-functions/api/proxy.js

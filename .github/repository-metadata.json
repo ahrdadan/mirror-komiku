@@ -1,0 +1,15 @@
+{
+  "description": "Manga chapter mirror and reader workspace: Rust server + static Edge Functions proxy.",
+  "homepage": "https://mirror-komiku.edgeone.dev/",
+  "topics": [
+    "manga",
+    "reader",
+    "rust",
+    "actix-web",
+    "websocket",
+    "edge-functions",
+    "static-site",
+    "indexeddb",
+    "avif"
+  ]
+}

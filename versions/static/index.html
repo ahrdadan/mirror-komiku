@@ -1,0 +1,39 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Static Manga Mirror</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="wrap">
+    <section class="panel" id="inputPanel">
+      <h1>Static Raw Reader</h1>
+      <p>
+        Versi ini full client-side dan berdiri sendiri. Masukkan URL chapter Komiku,
+        lalu buka dengan path <code>/&lt;encoded_target_url&gt;</code>.
+      </p>
+      <p class="hint">Fetch upstream dilakukan lewat Edge Function proxy <code>/api/proxy</code>.</p>
+      <form id="openForm" class="input-row">
+        <input id="targetUrl" type="url" required placeholder="https://komiku.org/martial-peak-chapter-980/" />
+        <button type="submit">Open</button>
+      </form>
+      <p class="hint">Contoh: <code>/https%3A%2F%2Fkomiku.org%2Fmartial-peak-chapter-980%2F</code></p>
+    </section>
+
+    <section class="panel hidden" id="readerPanel">
+      <header class="reader-header">
+        <h1 id="chapterTitle">Loading chapter...</h1>
+        <p id="chapterMeta">Initializing...</p>
+      </header>
+      <div id="pages" class="pages"></div>
+      <footer class="reader-footer">
+        <a id="nextBtn" class="btn disabled" href="#">No Next Chapter</a>
+      </footer>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

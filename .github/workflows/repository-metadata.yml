@@ -1,0 +1,107 @@
+name: Repository Metadata
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - ".github/repository-metadata.json"
+      - ".github/workflows/repository-metadata.yml"
+  workflow_dispatch:
+    inputs:
+      description:
+        description: "Optional override for repository description"
+        required: false
+        type: string
+      homepage:
+        description: "Optional override for repository homepage URL"
+        required: false
+        type: string
+      topics_csv:
+        description: "Optional override for topics (comma separated)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync Sidebar Description and Topics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Skip when REPO_ADMIN_TOKEN is not configured
+        if: ${{ secrets.REPO_ADMIN_TOKEN == '' }}
+        run: |
+          echo "REPO_ADMIN_TOKEN is not set. Skipping repository metadata sync."
+          echo "Create REPO_ADMIN_TOKEN to enable sidebar description/topics updates."
+
+      - name: Sync metadata to repository settings
+        if: ${{ secrets.REPO_ADMIN_TOKEN != '' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.REPO_ADMIN_TOKEN }}
+          script: |
+            const fs = require("fs");
+
+            const metadataPath = ".github/repository-metadata.json";
+            const raw = fs.readFileSync(metadataPath, "utf8");
+            const metadata = JSON.parse(raw);
+            const inputs = context.payload.inputs || {};
+
+            const normalizeTopics = (value) => {
+              if (!value) return [];
+              return [...new Set(
+                value
+                  .map((item) => String(item).trim().toLowerCase())
+                  .filter(Boolean)
+              )];
+            };
+
+            const parseTopicsCsv = (csv) => normalizeTopics(
+              String(csv)
+                .split(",")
+                .map((item) => item.trim())
+            );
+
+            const description = (inputs.description || metadata.description || "").trim();
+            const homepage = (inputs.homepage || metadata.homepage || "").trim();
+            const topics = inputs.topics_csv
+              ? parseTopicsCsv(inputs.topics_csv)
+              : normalizeTopics(Array.isArray(metadata.topics) ? metadata.topics : []);
+
+            if (!description && !homepage && topics.length === 0) {
+              core.setFailed("Nothing to update. Provide metadata in .github/repository-metadata.json or workflow inputs.");
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            await github.rest.repos.update({
+              owner,
+              repo,
+              description: description || null,
+              homepage: homepage || null
+            });
+
+            if (topics.length > 0) {
+              await github.rest.repos.replaceAllTopics({
+                owner,
+                repo,
+                names: topics
+              });
+            }
+
+            core.summary
+              .addHeading("Repository metadata synced")
+              .addRaw(`Description: ${description || "(cleared)"}`)
+              .addBreak()
+              .addRaw(`Homepage: ${homepage || "(cleared)"}`)
+              .addBreak()
+              .addRaw(`Topics: ${topics.length ? topics.join(", ") : "(unchanged/empty)"}`)
+              .write();
