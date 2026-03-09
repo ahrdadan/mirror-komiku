@@ -3,8 +3,9 @@ name: Rust Release
 on:
   workflow_dispatch:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
+      - master
 
 permissions:
   contents: write
@@ -13,6 +14,9 @@ jobs:
   release:
     name: Build and Publish Rust Release
     runs-on: ubuntu-latest
+    concurrency:
+      group: rust-release-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,21 +50,35 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Validate pushed tag matches Cargo.toml version
-        if: ${{ github.event_name == 'push' }}
-        shell: bash
-        run: |
-          if [ "${GITHUB_REF_NAME}" != "${{ steps.version.outputs.tag }}" ]; then
-            echo "::error::Tag ${GITHUB_REF_NAME} does not match Cargo.toml version tag ${{ steps.version.outputs.tag }}."
-            exit 1
-          fi
+      - name: Check release tag already exists
+        id: release_exists
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = "${{ steps.version.outputs.tag }}";
+            try {
+              await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag
+              });
+              core.setOutput("exists", "true");
+            } catch (error) {
+              if (error.status === 404) {
+                core.setOutput("exists", "false");
+              } else {
+                throw error;
+              }
+            }
 
       - name: Build release binary
+        if: ${{ steps.release_exists.outputs.exists != 'true' }}
         shell: bash
         run: cargo build --release --manifest-path versions/rust-server/Cargo.toml
 
       - name: Package artifact
         id: package
+        if: ${{ steps.release_exists.outputs.exists != 'true' }}
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
@@ -79,13 +97,21 @@ jobs:
           echo "checksum=$OUT_DIR/$ARCHIVE_NAME.sha256" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
+        if: ${{ steps.release_exists.outputs.exists != 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: mirror-komiku ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
           files: |
             ${{ steps.package.outputs.binary }}
             ${{ steps.package.outputs.binary_checksum }}
             ${{ steps.package.outputs.archive }}
             ${{ steps.package.outputs.checksum }}
+
+      - name: Release already exists
+        if: ${{ steps.release_exists.outputs.exists == 'true' }}
+        shell: bash
+        run: |
+          echo "Release for ${{ steps.version.outputs.tag }} already exists. Skipping build and upload."
