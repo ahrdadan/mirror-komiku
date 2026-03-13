@@ -1,0 +1,270 @@
+FULLSTACK PROXY READER PROJECT – AI AGENT BUILD PROMPT
+
+Project root: versions\svelte-rust
+
+Goal: Build a fullstack manga reader web application using a proxy
+architecture. The backend acts as a safe lightweight proxy, while the
+frontend processes HTML, extracts images, performs prefetching, and
+manages IndexedDB caching.
+
+This project initially supports the Komiku website but must be designed
+with a modular provider architecture so other manga sources can be added
+later.
+
+================================================================ TECH
+STACK ================================================================
+
+Backend - Rust (stable) - Actix Web - Reqwest - Tokio - Serde - Url -
+Tracing + tracing-subscriber
+
+Frontend - Svelte 5 - Vite - TypeScript - shadcn-svelte (UI
+components) - Dexie (IndexedDB wrapper) - DOMParser (HTML parsing) -
+Native Fetch - Pointer Events / Touch Events - CSS transform transitions
+for smooth page slide
+
+Tooling - Node.js LTS - pnpm
+
+================================================================ PROJECT
+STRUCTURE
+================================================================
+
+versions/ svelte-rust/ backend/ src/ main.rs routes/ providers/
+komiku/ proxy/ utils/ Cargo.toml frontend/ src/ components/ reader/
+settings/ providers/ db/ vite.config.ts package.json shared/
+url-encode-utils README.md
+
+================================================================ URL
+ROUTING BEHAVIOR
+================================================================
+
+Raw URL access:
+
+User may access: /https://komiku.org/martial-peak-chapter-981/
+
+System must:
+
+1.  Detect raw external URL.
+2.  Validate that the domain is allowed (Komiku).
+3.  Encode the URL.
+4.  Redirect to canonical provider route.
+
+Example:
+
+Input: /https://komiku.org/martial-peak-chapter-981/
+
+Redirect to: /komiku/
+
+Encoding must be path-safe (base64url recommended).
+
+Provide encode and decode utilities both frontend and backend.
+
+Canonical route format: /komiku/
+
+================================================================ BACKEND
+RESPONSIBILITIES
+================================================================
+
+Backend is only a secure lightweight proxy.
+
+Responsibilities:
+
+-   Decode encoded URL
+-   Validate URL
+-   Ensure domain belongs to provider (komiku.org)
+-   SSRF protection:
+    -   block localhost
+    -   block 127.0.0.1
+    -   block 0.0.0.0
+    -   block private IP ranges
+-   Only allow http / https schemes
+-   Set upstream timeout
+-   Limit response size
+-   Limit redirect chain
+-   Fetch upstream HTML using Reqwest
+-   Return raw HTML to frontend
+-   Apply safe headers
+
+Backend must NOT perform heavy DOM parsing.
+
+================================================================
+FRONTEND RESPONSIBILITIES
+================================================================
+
+Frontend does the main processing.
+
+Steps:
+
+1.  Fetch proxied HTML.
+2.  Parse using DOMParser.
+3.  Extract:
+    -   chapter title
+    -   image URLs
+    -   next chapter URL
+4.  Render images sequentially.
+5.  Save metadata to IndexedDB.
+6.  Prefetch next chapters.
+7.  Use memory cache first.
+8.  Fallback to IndexedDB if available.
+9.  If not cached, fetch from network.
+
+================================================================
+PREFETCH STRATEGY
+================================================================
+
+When user opens chapter N:
+
+Prefetch: - N+1 - N+2 - N+3
+
+Prefetch runs in parallel.
+
+When user navigates forward: - Prefetch next chapters again.
+
+Goal: Navigation should feel instant like sliding pages.
+
+================================================================
+INDEXEDDB CACHE POLICY
+================================================================
+
+Use Dexie.
+
+Stores:
+
+Table: chapters
+
+Fields: - chapterUrl - title - images[] - nextUrl - createdAt -
+lastAccessedAt
+
+Limit: Maximum 10 cached chapters.
+
+Eviction: Use LRU (Least Recently Used).
+
+If >10 chapters: Remove the least recently accessed.
+
+Images may optionally be cached as blobs.
+
+If image is not cached: Load directly from original source.
+
+================================================================ UI
+FEATURES
+================================================================
+
+Reader UI: - Full screen image reader - Smooth slide navigation
+
+Settings UI: - Sidebar or sheet panel - Cache limit display - Prefetch
+settings - Clear cache button
+
+Components (via shadcn-svelte): - Sheet - Sidebar - Slider - Toggle -
+Tabs - Dialog - Toast
+
+================================================================
+PROVIDER SYSTEM
+================================================================
+
+Design providers modularly.
+
+Structure:
+
+providers/ komiku/ parser.ts selectors.ts extractor.ts
+
+Provider must contain:
+
+-   domain matcher
+-   title extractor
+-   image extractor
+-   next chapter extractor
+
+================================================================
+SELECTOR: CHAPTER TITLE
+================================================================
+
+Priority order:
+
+1.  div header h1
+2.  h1 (fallback)
+
+Behavior:
+
+-   Use textContent.trim()
+-   First valid element wins
+
+Fallback title: “Manga Chapter”
+
+================================================================
+SELECTOR: CHAPTER IMAGES
+================================================================
+
+Priority order:
+
+1.  #Baca_Komik img
+2.  div#Baca_Komik img
+3.  img (fallback global)
+
+URL attribute priority:
+
+1.  src
+2.  data-src
+3.  data-lazy-src
+
+Filtering rules:
+
+-   Ignore empty URLs
+-   Ignore data: URIs
+-   Resolve relative URLs using: new URL(raw, sourceUrl)
+-   Remove duplicates using Set
+
+Important behavior:
+
+If a higher priority selector returns images, lower selectors must NOT
+run.
+
+If final image count = 0, chapter parsing is considered failed.
+
+================================================================
+SELECTOR: NEXT CHAPTER
+================================================================
+
+Priority order:
+
+1.  a[rel=‘next’]
+2.  a.next
+3.  .next a
+4.  .navig a
+5.  .pagination a
+6.  a (fallback global)
+
+Link validation rules:
+
+-   href must not be empty
+-   href must not equal ‘#’
+-   href must not start with javascript:
+-   absolute URL must be valid
+-   must not equal sourceUrl
+
+Heuristic selection:
+
+Prefer link if: - rel attribute contains “next” - link text contains
+“next” - link text contains “selanjutnya”
+
+If not found:
+
+1.  Extract current chapter number from path: chapter-
+
+2.  Search candidate containing: chapter-(number+1)
+
+Final fallback:
+
+Choose the last candidate containing “chapter-”.
+
+================================================================
+COMPATIBILITY NOTES
+================================================================
+
+These selectors reflect Komiku’s current HTML layout.
+
+If parsing fails frequently check:
+
+1.  Image selector (#Baca_Komik img)
+2.  Next selector (a[rel=‘next’], .next a, .pagination a)
+
+================================================================ END OF
+PROMPT ================================================================
