@@ -5,6 +5,7 @@
 # - Rust 1.94.0 is the latest stable release.
 ARG NODE_VERSION=24.14.0
 ARG RUST_VERSION=1.94.0
+ARG PNPM_VERSION=10.32.1
 
 FROM rust:${RUST_VERSION}-bookworm AS backend-builder
 WORKDIR /app/backend
@@ -12,8 +13,9 @@ COPY backend/ ./
 RUN cargo build --release
 
 FROM node:${NODE_VERSION}-bookworm-slim AS frontend-builder
+ARG PNPM_VERSION
 WORKDIR /app/frontend
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY frontend/ ./
