@@ -19,15 +19,15 @@ RUN pnpm install --frozen-lockfile
 COPY frontend/ ./
 RUN pnpm build
 
-FROM debian:bookworm-slim AS backend-runtime
+FROM debian:bookworm-slim AS app-runtime
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates \
+  && apt-get install -y --no-install-recommends ca-certificates nginx \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=backend-builder /app/backend/target/release/mirror-komiku-proxy /usr/local/bin/mirror-komiku-proxy
-EXPOSE 8080
-CMD ["mirror-komiku-proxy"]
-
-FROM nginx:1.28-alpine AS frontend-runtime
 COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
+COPY docker/nginx.default.conf /etc/nginx/sites-available/default
+COPY docker/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 EXPOSE 80
+CMD ["/usr/local/bin/start.sh"]

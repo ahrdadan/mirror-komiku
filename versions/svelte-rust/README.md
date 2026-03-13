@@ -126,25 +126,23 @@ Vite proxies `/api/*` to backend `http://127.0.0.1:8080`.
 
 - `.gitignore`
 - `.dockerignore`
-- `Dockerfile` (multi-target)
+- `Dockerfile` (single final runtime image)
 
 LTS/stable base images pinned in Dockerfile (as of **March 13, 2026**):
 
 - Node.js: `24.14.0` (latest LTS / Active LTS)
 - Rust: `1.94.0` (latest stable)
 
-Build backend image:
+Build fullstack image (frontend + backend):
 
 ```bash
 cd versions/svelte-rust
-docker build --target backend-runtime -t mirror-komiku-v3-backend .
-docker run --rm -p 8080:8080 mirror-komiku-v3-backend
+docker build -t mirror-komiku-svelte-rust .
+docker run --rm -p 5173:80 mirror-komiku-svelte-rust
 ```
 
-Build frontend image:
+Open:
 
 ```bash
-cd versions/svelte-rust
-docker build --target frontend-runtime -t mirror-komiku-v3-frontend .
-docker run --rm -p 5173:80 mirror-komiku-v3-frontend
+http://127.0.0.1:5173
 ```
